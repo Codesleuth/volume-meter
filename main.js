@@ -24,42 +24,42 @@ SOFTWARE.
 var audioContext = null;
 var meter = null;
 var canvasContext = null;
-var WIDTH=500;
-var HEIGHT=50;
+var WIDTH = 500;
+var HEIGHT = 50;
 var rafID = null;
 
-window.onload = function() {
+window.onload = function () {
 
     // grab our canvas
-	canvasContext = document.getElementById( "meter" ).getContext("2d");
-	
+    canvasContext = document.getElementById("meter").getContext("2d");
+
     // monkeypatch Web Audio
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
-	
+
     // grab an audio context
     audioContext = new AudioContext();
 
     // Attempt to get audio input
     try {
         // monkeypatch getUserMedia
-        navigator.getUserMedia = 
-        	navigator.getUserMedia ||
-        	navigator.webkitGetUserMedia ||
-        	navigator.mozGetUserMedia;
+        navigator.getUserMedia =
+            navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia;
 
         // ask for an audio input
         navigator.getUserMedia(
-        {
-            "audio": {
-                "mandatory": {
-                    "googEchoCancellation": "false",
-                    "googAutoGainControl": "false",
-                    "googNoiseSuppression": "false",
-                    "googHighpassFilter": "false"
+            {
+                "audio": {
+                    "mandatory": {
+                        "googEchoCancellation": "false",
+                        "googAutoGainControl": "false",
+                        "googNoiseSuppression": "false",
+                        "googHighpassFilter": "false"
+                    },
+                    "optional": []
                 },
-                "optional": []
-            },
-        }, gotStream, didntGetStream);
+            }, gotStream, didntGetStream);
     } catch (e) {
         alert('getUserMedia threw exception :' + e);
     }
@@ -85,19 +85,29 @@ function gotStream(stream) {
     drawLoop();
 }
 
-function drawLoop( time ) {
+function drawLoop(time) {
     // clear the background
-    canvasContext.clearRect(0,0,WIDTH,HEIGHT);
+    canvasContext.clearRect(0, 0, WIDTH, HEIGHT);
 
     // check if we're currently clipping
-    if (meter.checkClipping())
-        canvasContext.fillStyle = "red";
-    else
-        canvasContext.fillStyle = "green";
+    if (meter.checkClipping()) {
+        if (canvasContext.fillStyle !== "red") {
+            canvasContext.fillStyle = "red";
+            fetch('http://192.168.1.161:8080/on');
+        }
+        // call on
+    }
+    else {
+        if (canvasContext.fillStyle !== "green") {
+            fetch('http://192.168.1.161:8080/off');
+            canvasContext.fillStyle = "green";
+        }
+        // call off
+    }
 
     // draw a bar based on the current volume
-    canvasContext.fillRect(0, 0, meter.volume*WIDTH*1.4, HEIGHT);
+    canvasContext.fillRect(0, 0, meter.volume * WIDTH * 1.4, HEIGHT);
 
     // set up the next visual callback
-    rafID = window.requestAnimationFrame( drawLoop );
+    rafID = window.requestAnimationFrame(drawLoop);
 }
